@@ -1,0 +1,20 @@
+# Student data: never commit enrollment lists, TBP templates, or generated
+# reports. Keep them in data/ (ignored) or anywhere outside the repo.
+data/
+*.xls
+*.xlsx
+*.xlsm
+*.csv
+*.docx
+*.pdf
+
+# Python / uv
+.venv/
+__pycache__/
+*.pyc
+
+# Editor / OS
+.DS_Store
+.claude/settings.local.json
+.idea/
+.vscode/
