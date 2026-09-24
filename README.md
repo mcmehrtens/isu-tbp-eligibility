@@ -74,10 +74,12 @@ uv run compare_reports.py data/report-a.xls data/report-b.xls [-o discrepancies.
    instructions and a checkbox column:
    - **Section 1** — input members with no template match. Find them in
      Section 3 (or the TBP member lookup) and add them using HQ's data,
-     updating only Junior/Senior.
+     updating only Junior/Senior. Includes the graduation date computed from
+     the ISU data, for students with no Section 3 match.
    - **Section 2** — non-members whose data matches a template entry
      (possible miscoding in the ISU data). Excluded from the CSV pending
-     review.
+     review. Includes the computed graduation date, for adding any that turn
+     out to be true non-members.
    - **Section 3** — template members with no input match. Likely graduated,
      or a name/email mismatch with Section 1.
 

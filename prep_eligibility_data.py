@@ -766,7 +766,7 @@ def write_manual_review(
     _append_styled_row(
         ws,
         ["SECTION 1: Input members with no template match",
-         "", "", "", "", "", "", ""],
+         "", "", "", "", "", "", "", "", ""],
         fill=_SECTION_FILL, font=_SECTION_FONT,
     )
     ws.append([
@@ -791,17 +791,27 @@ def write_manual_review(
     ])
     ws.cell(row=ws.max_row, column=1).font = _INSTRUCTION_FONT
     ws.cell(row=ws.max_row, column=1).alignment = Alignment(wrap_text=True)
+    ws.append([
+        "Grad Month/Year below is computed from the input spreadsheet "
+        "(admission period + 8 semesters, or 4/2 semesters from now for "
+        "juniors/seniors if that date has passed). Use it when adding a "
+        "student who has no Section 3 match."
+    ])
+    ws.cell(row=ws.max_row, column=1).font = _INSTRUCTION_FONT
+    ws.cell(row=ws.max_row, column=1).alignment = Alignment(wrap_text=True)
 
     headers_1 = [
         "Reviewed (X)", "First", "Middle", "Last",
-        "Junior or Senior Class", "Curriculum", "Email", "Notes",
+        "Junior or Senior Class", "Grad Month", "Grad Year",
+        "Curriculum", "Email", "Notes",
     ]
     _append_styled_row(ws, headers_1, fill=_HEADER_FILL, font=_HEADER_FONT)
     for row, note in unmatched_input:
         ws.append([
             "", row["First"], row["Middle"], row["Last"],
-            row["Junior or Senior Class"], row["Curriculum"], row["Email Address"],
-            note,
+            row["Junior or Senior Class"], row["Month of Graduation"],
+            int(row["Year of Graduation"]), row["Curriculum"],
+            row["Email Address"], note,
         ])
 
     # Spacer rows.
@@ -813,7 +823,7 @@ def write_manual_review(
         _append_styled_row(
             ws,
             ["SECTION 2: Possibly miscoded non-members",
-             "", "", "", "", "", "", ""],
+             "", "", "", "", "", "", "", "", ""],
             fill=_WARNING_FILL, font=_WARNING_FONT,
         )
         ws.append([
@@ -830,21 +840,26 @@ def write_manual_review(
             "member. If so, add them to the eligibility report using the "
             "template's data from Section 3 (with 'M' in Present Member, "
             "updating Junior/Senior status as shown here). If they are "
-            "truly non-members, add them manually as non-members."
+            "truly non-members, add them manually as non-members using the "
+            "data shown here, including the Grad Month/Year computed from the "
+            "input spreadsheet."
         ])
         ws.cell(row=ws.max_row, column=1).font = _INSTRUCTION_FONT
         ws.cell(row=ws.max_row, column=1).alignment = Alignment(wrap_text=True)
 
         headers_2 = [
             "Reviewed (X)", "First", "Middle", "Last",
-            "Junior or Senior Class", "Curriculum", "Email", "Notes",
+            "Junior or Senior Class", "Grad Month", "Grad Year",
+            "Curriculum", "Email", "Notes",
         ]
         _append_styled_row(ws, headers_2, fill=_HEADER_FILL, font=_HEADER_FONT)
         for input_row, note in miscoded_nonmembers:
             ws.append([
                 "", input_row["First"], input_row["Middle"],
                 input_row["Last"], input_row["Junior or Senior Class"],
-                input_row["Curriculum"], input_row["Email Address"], note,
+                input_row["Month of Graduation"],
+                int(input_row["Year of Graduation"]), input_row["Curriculum"],
+                input_row["Email Address"], note,
             ])
 
         ws.append([])
