@@ -10,9 +10,15 @@ eligibility spreadsheets.
   manual-review workbook for anything it can't resolve automatically.
 - `compare_reports.py` — diffs the member rows of two filled-in TBP report
   workbooks (e.g. one generated from this CSV vs. one done by hand).
+- `split_by_department.py` — splits the eligible non-members into
+  per-department lists (an Excel tab and a Net-ID CSV per department) for
+  sending invitations. Also keeps `Major-Department Reference.xlsx` (in this
+  repo) up to date with every major seen and its department.
 
 > **Student data is never committed.** `.gitignore` excludes all spreadsheets,
 > CSVs, and documents, plus a `data/` directory. Keep inputs and outputs there.
+> The one exception is `Major-Department Reference.xlsx`, which holds no
+> student data.
 
 ## Semester workflow
 
@@ -86,6 +92,75 @@ uv run compare_reports.py data/report-a.xls data/report-b.xls [-o discrepancies.
 Summary statistics (eligible counts, match results, duplicate emails,
 per-curriculum breakdown) and all fuzzy matches are printed to stdout.
 
+## Department lists
+
+`split_by_department.py` takes the same ISU eligibility workbook and produces
+the lists departments use to reach invitees. It reads all four eligible tabs
+(`Juniors`, `Seniors`, `Masters`, `PhD`), so graduate students are included.
+
+```
+TBP_PASSWORD=... uv run split_by_department.py <semester> <input.xlsx> \
+    [--prior SEMESTER=PATH ...] [-o OUTDIR] [--reference PATH] [--no-encrypt]
+```
+
+| Argument | Description |
+|---|---|
+| `semester` | Current semester (`F2026`); used in output file names |
+| `input.xlsx` | ISU eligibility workbook |
+| `--prior SEMESTER=PATH` | An earlier semester's workbook, used only to fill in the majors reference (repeatable) |
+| `-o OUTDIR` | Output directory for the department workbook and CSVs (default: `data/`) |
+| `--reference PATH` | Majors reference workbook to update (default: `Major-Department Reference.xlsx` in this repo) |
+| `--no-encrypt` | Don't password-protect the department workbook |
+
+The password comes from `TBP_PASSWORD` if set; otherwise you are prompted
+when an input is encrypted.
+
+Example:
+
+```
+TBP_PASSWORD=... uv run split_by_department.py F2026 "data/Fall 2026 Lists.xlsx" \
+    --prior "S2026=data/Spring2026TBPLists.xlsx" -o data/dept-F2026
+```
+
+### Outputs
+
+The first two go in `OUTDIR`; the third is updated in place in the repo.
+
+1. **`<Semester> Non-Member Lists - Separated by Department.xlsx`**: one tab
+   per department with Last Name, First Name, Net-ID, and Major, sorted by
+   last name. Encrypted with the input workbook's password.
+2. **`Department Net-IDs/<Semester> Net-IDs - <DEPT>.csv`**: Net-IDs only, one
+   per line, no header, in the same order as the matching tab.
+3. **`Major-Department Reference.xlsx`** (repo root, tracked in git): every
+   Program of Study seen so far, with its department, the semesters it
+   appeared in, and notes explaining non-obvious placements. Each run merges
+   the programs from the current and `--prior` workbooks into the existing
+   file, so earlier semesters are kept and `--prior` is only needed to
+   backfill. Commit the updated file after each semester's run. It is not
+   encrypted, since it holds no student data.
+
+### Decision logic
+
+- **Non-member**: both `Tau_Beta_Pi_Grad` and `Tau_Beta_Pi_Undergrad` are
+  blank. As a safety net, anyone whose email is on a member tab
+  (`Current TBP Members` / `Members`) is also excluded.
+- **Net-ID**: the part of the institutional email before `@`.
+- **Department**: the program name (the Program of Study text before the
+  first comma) is looked up in `PROGRAM_DEPARTMENTS`. Cross-department
+  programs are placed as follows. See the notes in the reference workbook
+  for sources.
+  - Engineering Mechanics → AERE
+  - Industrial and Agricultural Technology → ABE
+  - Biomedical Engineering → CBE
+  - Software Engineering → ECpE
+  - Engineering Management and Systems Engineering → IMSE
+  - Energy Systems Engineering → ME
+- **Unknown programs**: if any program on any tab is not mapped, the script
+  lists them and exits without writing anything. Add them to
+  `PROGRAM_DEPARTMENTS` and re-run.
+- **Duplicates**: a student on more than one tab (e.g. both Masters and PhD)
+  appears once, with the majors joined by `; `.
+
 ## Decision logic
 
 **Graduation date.** Derived from `Admitted To Academic Period` by advancing 8
@@ -139,6 +214,16 @@ Everything likely to change lives in the `CONFIGURATION` block at the top of
 | `TBP_MEMBER_VALUE` | ISU's membership indicator string changes |
 | `SEMESTERS_TO_GRADUATION`, `*_GRADUATION_MONTH` | Degree timeline or commencement schedule changes |
 | `FALLBACK_SEMESTERS_*` | Past-graduation fallback policy changes |
+
+For `split_by_department.py`, the `CONFIGURATION` block holds:
+
+| Constant | Update when |
+|---|---|
+| `PROGRAM_DEPARTMENTS` | ISU adds or renames a program, or it moves department (the script stops on unmapped programs) |
+| `DEPARTMENTS` | A department is added, renamed, or merged |
+| `DEPARTMENT_NOTES` | Rationale/source for a cross-department placement changes |
+| `ELIGIBLE_SHEETS` / `MEMBER_SHEETS` | ISU workbook tab names change |
+| `COL_*` | ISU column headers change |
 
 `compare_reports.py` reads columns 11–19 of the template's `TBPEligMembers`
 sheet; adjust `MEMBER_COLS` if HQ changes the template layout.

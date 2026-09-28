@@ -8,6 +8,9 @@ data/
 *.docx
 *.pdf
 
+# Exception: the major -> department reference has no student data.
+!/Major-Department Reference.xlsx
+
 # Python / uv
 .venv/
 __pycache__/
